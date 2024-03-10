@@ -14,148 +14,144 @@
 
 using static System.Console;
 
-namespace CyberForum
+public class Game
 {
-    class Program
+    public List<Card> cardDeck;
+    public List<Player> players;
+
+    private Random _random;
+    private int _cardsAmount = 36;
+    public Game(int playersCount = 2)
     {
-        static void Main()
+        _random = new Random();
+
+        players = new List<Player>();
+        for (int i = 0; i < playersCount; i++)
         {
-            Game game = new Game(4);
-            while (game.playersTurn()) { }
+            players.Add(new Player());
+        }
+
+        cardDeck = createCardDeck();
+        shuffleCards(cardDeck);
+
+        dealCardsToPlayers(players, cardDeck);
+    }
+
+    public List<Card> createCardDeck()
+    {
+        cardDeck = new List<Card>();
+        int suitCount = _cardsAmount / 4;
+
+        for (int i = 0; i < suitCount; i++)
+        {
+            cardDeck.Add(new Card((CardValue)i, (CardSuit)0));
+            cardDeck.Add(new Card((CardValue)i, (CardSuit)1));
+            cardDeck.Add(new Card((CardValue)i, (CardSuit)2));
+            cardDeck.Add(new Card((CardValue)i, (CardSuit)3));
+        }
+
+        return cardDeck;
+    }
+
+    public void shuffleCards(List<Card> cards)
+    {
+        cards.Sort((a, b) => _random.Next(-2, 2));
+    }
+
+    public void dealCardsToPlayers(List<Player> players, List<Card> cards)
+    {
+        int currentPlayer = 0;
+
+        for (int i = 0; i < cards.Count; i++)
+        {
+            players[currentPlayer].cards.Add(cards[i]);
+
+            currentPlayer++;
+            currentPlayer %= players.Count;
         }
     }
 
-    public class Game
+    public bool playersTurn()
     {
-        public List<Card> cardDeck;
-        public List<Player> players;
+        WriteLine("Ход игроков:");
+        WriteLine("игрок\tкол-во карт\tход картой");
 
-        private Random _random;
-        private int _cardsAmount = 36;
-        public Game(int playersCount = 2)
+        int maxValue = -1;
+        Player playerWithMaxValue = null;
+        Stack<Card> cardStack = new Stack<Card>();
+
+        for (int i = 0; i < players.Count; i++)
         {
-            _random = new Random();
+            Player player = players[i];
 
-            players = new List<Player>();
-            for (int i = 0; i < playersCount; i++)
+            if (player.cards.Count > 0)
             {
-                players.Add(new Player());
-            }
+                Card card = player.cards[_random.Next(player.cards.Count)];
 
-            cardDeck = createCardDeck();
-            shuffleCards(cardDeck);
+                WriteLine($"{i}\t{player.cards.Count}\t\t{card}");
+                player.cards.Remove(card);
 
-            dealCardsToPlayers(players, cardDeck);
-        }
-
-        public List<Card> createCardDeck()
-        {
-            cardDeck = new List<Card>();
-            int suitCount = _cardsAmount / 4;
-
-            for (int i = 0; i < suitCount; i++)
-            {
-                cardDeck.Add(new Card((CardValue)i, (CardSuit)0));
-                cardDeck.Add(new Card((CardValue)i, (CardSuit)1));
-                cardDeck.Add(new Card((CardValue)i, (CardSuit)2));
-                cardDeck.Add(new Card((CardValue)i, (CardSuit)3));
-            }
-
-            return cardDeck;
-        }
-
-        public void shuffleCards(List<Card> cards)
-        {
-            cards.Sort((a, b) => _random.Next(-2, 2));
-        }
-
-        public void dealCardsToPlayers(List<Player> players, List<Card> cards)
-        {
-            int currentPlayer = 0;
-
-            for (int i = 0; i < cards.Count; i++)
-            {
-                players[currentPlayer].cards.Add(cards[i]);
-
-                currentPlayer++;
-                currentPlayer %= players.Count;
-            }
-        }
-
-        public bool playersTurn()
-        {
-            WriteLine("Ход игроков:");
-            WriteLine("игрок\tкол-во карт\tход картой");
-
-            int maxValue = -1;
-            Player playerWithMaxValue = null;
-            Stack<Card> cardStack = new Stack<Card>();
-
-            for (int i = 0; i < players.Count; i++)
-            {
-                Player player = players[i];
-
-                if (player.cards.Count > 0)
+                if ((int)card.value > maxValue)
                 {
-                    Card card = player.cards[_random.Next(player.cards.Count)];
-
-                    WriteLine($"{i}\t{player.cards.Count}\t\t{card}");
-                    player.cards.Remove(card);
-
-                    if ((int)card.value > maxValue)
-                    {
-                        maxValue = (int)card.value;
-                        playerWithMaxValue = player;
-                    }
-
-                    cardStack.Push(card);
-
+                    maxValue = (int)card.value;
+                    playerWithMaxValue = player;
                 }
+
+                cardStack.Push(card);
+
             }
-
-            playerWithMaxValue.cards.AddRange(cardStack);
-            WriteLine($"Забрал игрок {players.IndexOf(playerWithMaxValue)}.");
-            WriteLine("------------------------------------------------");
-
-            if (playerWithMaxValue.cards.Count == _cardsAmount)
-            {
-                WriteLine($"Победил игрок номер {players.IndexOf(playerWithMaxValue)}");
-                return false;
-            }
-
-            return true;
         }
-    }
 
-    public class Player
-    {
-        public List<Card> cards = new List<Card>();
-    }
+        playerWithMaxValue.cards.AddRange(cardStack);
+        WriteLine($"Забрал игрок {players.IndexOf(playerWithMaxValue)}.");
+        WriteLine("------------------------------------------------");
 
-    public enum CardValue
-    {
-        Шестёрка = 0, Семёрка, Восьмёрка, Девятка, Десятка, Валет, Дама, Король, Туз
-    }
-
-    public enum CardSuit
-    {
-        ЧЕРВЫ = 0, БУБЫ, ТРЕФЫ, ПИКИ
-    }
-    public class Card
-    {
-
-        public readonly CardValue value;
-        public readonly CardSuit suit;
-
-        public Card(CardValue value, CardSuit suit)
+        if (playerWithMaxValue.cards.Count == _cardsAmount)
         {
-            this.value = value;
-            this.suit = suit;
+            WriteLine($"Победил игрок номер {players.IndexOf(playerWithMaxValue)}");
+            return false;
         }
 
-        public override string ToString()
-        {
-            return $"{value} {suit}";
-        }
+        return true;
+    }
+}
+
+public class Player
+{
+    public List<Card> cards = new List<Card>();
+}
+
+public enum CardValue
+{
+    Шестёрка = 0, Семёрка, Восьмёрка, Девятка, Десятка, Валет, Дама, Король, Туз
+}
+
+public enum CardSuit
+{
+    ЧЕРВЫ = 0, БУБЫ, ТРЕФЫ, ПИКИ
+}
+public class Card
+{
+
+    public readonly CardValue value;
+    public readonly CardSuit suit;
+
+    public Card(CardValue value, CardSuit suit)
+    {
+        this.value = value;
+        this.suit = suit;
+    }
+
+    public override string ToString()
+    {
+        return $"{value} {suit}";
+    }
+}
+class Program
+{
+    static void Main()
+    {
+        Game game = new Game(4);
+        while (game.playersTurn()) { }
     }
 }
